@@ -17,7 +17,7 @@ Four items are still open and none of them blocks the plan. Change any row and I
 | Device | Desktop-first, still usable at 375 px wide | Assumed |
 | Language | English only | Assumed |
 | Default credit range | 12 to 15, in config | Assumed |
-| Hackathon date | Open. The code always looks up the "current" catalog and never hard-codes its id. | Open |
+| Hackathon date | Open. | Open |
 | Contact email in User-Agent | Open. Read from `IMPORTER_CONTACT_EMAIL`; importers refuse to run without it. | Open |
 | Owners | Open. Shown as \[NAME 1\], \[NAME 2\], \[NAME 3\]. | Open |
 | Judging criteria | Open. The demo follows the story in section 14 of the brief. | Open |
@@ -30,7 +30,6 @@ One variable, `LIVE_SOURCES`, lists the sources the importers may call. It is em
 | --- | --- | --- | --- |
 | Public Course Search (student.byui.edu) | None published | Off | The team decides. Demo subjects only, throttled. |
 | Directory pages (www.byui.edu) | All agents allowed, Crawl-delay 10 | Off | The team decides. 10 seconds between requests. |
-| Catalog API (byui.kuali.co/api) | `/api` disallowed | Off | Only with BYU-Idaho's written OK. Until then the catalog comes from a seed file typed by hand. |
 
 Whether the copyright terms cover a learning project is BYU-Idaho's question to answer, not mine. This design means a late or missing answer costs you nothing in the demo.
 
@@ -120,7 +119,7 @@ Data delivers the database, the request log and three loaders, all built and tes
 | DATA-01 | Repo, CI, database, first deploy | 0 to 1.5 | M | None |
 | DATA-02 | Public HTTP client, request log, public-access test | 1.5 to 3 | M | DATA-01 |
 | DATA-03 | Class schedule importer | 3 to 5.5 | L | DATA-02, ENG-02 |
-| DATA-04 | Catalog loader (seed file first, Kuali behind the flag) | 5.5 to 7 | M | DATA-02 |
+| DATA-04 | Catalog loader (our own script and database) | 5.5 to 7 | M | DATA-02 |
 | DATA-05 | Professors: directory profiles, name matching, RMP link | 7 to 8.5 | M | DATA-03 |
 | DATA-06 | Privacy, security, demo snapshot | 8.5 to 10 | M | DATA-01, AI-04 |
 
@@ -148,7 +147,7 @@ Acceptance criteria:
 
 - [ ] With `LIVE_SOURCES` empty, the client makes no network call and raises `LiveImportDisabled`.
 - [ ] A test fails if any file under `importers/` or `schools/` imports `requests` or `httpx` directly.
-- [ ] Each run starts with an empty cookie jar. Setting a `Cookie` or `Authorization` header for `*.byui.edu` or `byui.kuali.co` raises `ForbiddenHeaderError`.
+- [ ] Each run starts with an empty cookie jar. Setting a `Cookie` or `Authorization` header for `*.byui.edu` raises `ForbiddenHeaderError`.
 - [ ] Two requests to www.byui.edu are at least 10 seconds apart (tested with a fake clock). Other hosts use `DEFAULT_DELAY_S`, 2 seconds by default.
 - [ ] The raw response is saved in `raw_responses` before any parsing. A second fetch of the same URL and term makes 0 network calls.
 - [ ] Every request writes one `request_log` row: time, method, URL, status, `cookie_sent`, `auth_sent`.
@@ -177,19 +176,17 @@ Tests: `test_schedule_importer.py` on the saved pages, including the idempotency
 
 ### DATA-04 · Catalog loader
 
-Loads courses and their raw prerequisite text through one `CatalogImporter` interface with two implementations. The seed file is the default; the Kuali importer exists but stays off. Folders: `backend/app/schools/byui/catalog_seed.py`, `backend/app/schools/byui/kuali_importer.py`, `fixtures/catalog_seed.json`.
+Loads courses and their raw prerequisite text into our own database with our own script, through the `CatalogImporter` interface. The catalog is ours: we do not use Kuali or its API. Folders: `backend/app/schools/byui/catalog_seed.py`, `fixtures/catalog_seed.json`.
 
 Acceptance criteria:
 
 - [ ] `SeedCatalogImporter` loads at least 40 courses in the demo subjects from `fixtures/catalog_seed.json`: code, title, credits, description, raw prerequisite text, equivalent courses, and the URL of the public catalog page each was read from.
 - [ ] `CSE111` in the seed is stored as `CSE 111`.
 - [ ] A prerequisite that says `CS101 (last offered 2023)` keeps `CS 101` as a valid option in the stored text.
-- [ ] `KualiCatalogImporter` runs only when `kuali` is in `LIVE_SOURCES`. In tests it runs on recorded JSON only.
-- [ ] The Kuali importer calls `/catalogs/current` first. A test fails if the id `68dc4d77c3ad086d83653f48` appears anywhere in the code.
-- [ ] The catalog id and title are stored with the data, so the snapshot says which catalog it holds.
+- [ ] The catalog year is stored with the data, so the snapshot says which catalog it holds.
 - [ ] A second run changes 0 rows. The run summary lists every section whose course is missing from the catalog.
 
-Tests: `test_catalog_seed.py`, `test_kuali_importer.py` on recorded JSON.
+Tests: `test_catalog_seed.py`.
 
 ### DATA-05 · Professors: directory profiles, name matching, RMP link
 
@@ -578,13 +575,12 @@ Cut from the top when a checkpoint is missed by more than 30 minutes. Each cut n
 | Order | Cut | What the demo shows instead |
 | --- | --- | --- |
 | 1 | Live importer runs for all subjects | Demo subjects only, then fixtures only |
-| 2 | Kuali importer (DATA-04, second half) | The hand-made catalog seed |
-| 3 | Unlock bonus and gap scoring (ENG-05) | Ranking by requirements, preferences and favorites |
-| 4 | No-solution relaxation (ENG-05) | "No schedule fits. Remove a constraint." |
-| 5 | Directory profiles and Haiku tags (DATA-05) | The 10 fixture professors |
-| 6 | Claude-written mentor reasons and email (AI-05) | Structured reasons as a list and a fixed email template |
-| 7 | Live audit upload on stage (AI-04) | "Use sample audit", plus a recorded clip of a real parse |
-| 8 | Mentor finder (ENG-06, AI-05) | Professor pages with stars only |
+| 2 | Unlock bonus and gap scoring (ENG-05) | Ranking by requirements, preferences and favorites |
+| 3 | No-solution relaxation (ENG-05) | "No schedule fits. Remove a constraint." |
+| 4 | Directory profiles and Haiku tags (DATA-05) | The 10 fixture professors |
+| 5 | Claude-written mentor reasons and email (AI-05) | Structured reasons as a list and a fixed email template |
+| 6 | Live audit upload on stage (AI-04) | "Use sample audit", plus a recorded clip of a real parse |
+| 7 | Mentor finder (ENG-06, AI-05) | Professor pages with stars only |
 
 Never cut: chat to schedules on a calendar, the prerequisite check, the consent screen, and the request log.
 
@@ -619,7 +615,7 @@ The three risks most likely to hurt the demo are a late critical-path block, an 
 | BYU-Idaho's answer is late, or is no | Fixtures and the catalog seed carry the demo. `LIVE_SOURCES` stays empty. The demo states the permission status honestly. | DATA-02, DATA-04 |
 | Course Search paging needs a session cookie, which breaks the "no Cookie header" rule | Test by hand before the hackathon with cookies blocked. If it needs one, stay on saved pages and ask BYU-Idaho; do not weaken the rule quietly. | DATA-03 |
 | Scraper is slow or breaks on postbacks | Built and tested on saved pages. Demo subjects first. The demo runs on the snapshot. | DATA-03, DATA-06 |
-| The catalog switches to a new year on Dec 1 | Always look up "current"; the catalog id is stored with the snapshot. | DATA-04 |
+| The catalog switches to a new year on Dec 1 | Our script loads one catalog year into our database; the year is stored with the snapshot. | DATA-04 |
 | Prerequisite text does not parse | Haiku fallback with validation; leftovers are stored as `unparsed` and shown as a warning. | ENG-04 |
 | Audit PDFs differ by major, or Claude misreads one | Golden tests on 3 audits, validation flags, the confirm screen, and "Use sample audit". | AI-04 |
 | Two professors are merged, or a profile is attached to the wrong person | Match on name and department, 0.8 confidence floor, overrides file. | DATA-05 |
@@ -627,7 +623,7 @@ The three risks most likely to hurt the demo are a late critical-path block, an 
 | Claude API cost or rate limits | Cache by input hash, per-session rate limits, recorded responses in CI, a spend limit on the API key. | AI-02, DATA-06 |
 | Message Batches are too slow for a 12-hour event: a batch can take up to 24 hours, though most finish within 1 hour ([Claude docs](https://platform.claude.com/docs/en/build-with-claude/batch-processing)) | Run the bulk Haiku jobs as direct calls with caching. The volumes are small (20 to 40 prerequisite texts, about 30 professors). Move to Batches after the hackathon. | ENG-04, DATA-05 |
 | The free backend sleeps or the last deploy fails | Deploy at Hour 1.5, auto-deploy on every merge, health ping, backup video. | DATA-01, AI-06 |
-| AI & Product is still the heaviest lane | The Engine owner pairs on it from Hour 9.5. Cut-list items 6 to 8 all lighten it. | Cut list |
+| AI & Product is still the heaviest lane | The Engine owner pairs on it from Hour 9.5. Cut-list items 5 to 7 all lighten it. | Cut list |
 
 ## Working rules
 
