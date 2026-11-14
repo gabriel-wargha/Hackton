@@ -176,7 +176,7 @@ Tests: `test_schedule_importer.py` on the saved pages, including the idempotency
 
 ### DATA-04 · Catalog loader
 
-Loads courses and their raw prerequisite text into our own database with our own script, through the `CatalogImporter` interface. The catalog is ours: we do not use Kuali or its API. Folders: `backend/app/schools/byui/catalog_seed.py`, `fixtures/catalog_seed.json`.
+Our own script loads courses and their raw prerequisite text into our own database, through the `CatalogImporter` interface. Each run compares the source with the database and writes only what is different. The catalog is ours: we do not use Kuali or its API. Folders: `backend/app/schools/byui/catalog_seed.py`, `fixtures/catalog_seed.json`.
 
 Acceptance criteria:
 
@@ -184,7 +184,8 @@ Acceptance criteria:
 - [ ] `CSE111` in the seed is stored as `CSE 111`.
 - [ ] A prerequisite that says `CS101 (last offered 2023)` keeps `CS 101` as a valid option in the stored text.
 - [ ] The catalog year is stored with the data, so the snapshot says which catalog it holds.
-- [ ] A second run changes 0 rows. The run summary lists every section whose course is missing from the catalog.
+- [ ] Each run compares every course with the database: new courses are inserted, changed courses are updated, and unchanged courses are not touched. The run summary prints how many were added, updated and unchanged.
+- [ ] A second run with the same source changes 0 rows. The run summary lists every section whose course is missing from the catalog.
 
 Tests: `test_catalog_seed.py`.
 
