@@ -246,6 +246,8 @@ run it, say so.
 
 - No test makes a live network call or a live Claude call in CI. Use recorded
   responses. Tests that hit the real Claude API are marked `live` and run by hand.
+- Write the failing tests for a block's acceptance criteria before writing the
+  code that makes them pass.
 - Every block adds the test files named in `plan.md`.
 - Pure logic (parsers, conflict checker, prerequisite evaluator, solver) gets
   parametrized unit tests with the concrete cases from the acceptance criteria.
