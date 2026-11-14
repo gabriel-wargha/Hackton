@@ -266,7 +266,9 @@ run it, say so.
   AI & Product.
 - Unfinished features merge behind a flag (`FEATURE_AUDIT_UPLOAD`,
   `FEATURE_MENTORS`, `FEATURE_RELAXATION`) that is off in production.
-- Commit or push only when a human asks you to.
+- AI agents (Claude included) never run `git commit` or `git push`, even when
+  asked to finish a task. Make the changes, stage them with `git add`, and leave
+  them in the staging area. A human reviews, commits and pushes.
 
 ## When you are unsure
 
