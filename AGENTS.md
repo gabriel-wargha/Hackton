@@ -48,14 +48,12 @@ When you are asked to work on something:
 - All outbound HTTP from importers goes through `PublicHttpClient`
   (`backend/app/http/client.py`). Do not import `requests` or `httpx` directly in
   `importers/` or `schools/`.
-- Never send a `Cookie` or `Authorization` header to `*.byui.edu` or
-  `byui.kuali.co`.
+- Never send a `Cookie` or `Authorization` header to `*.byui.edu`.
 - `LIVE_SOURCES` is empty by default, which means zero outbound requests to
   BYU-Idaho. Do not change the default. Do not run a live importer unless a human
   on the team asks you to in this session. Never run one in CI or in tests.
-- The catalog API (`byui.kuali.co/api`) is disallowed by that site's robots.txt.
-  The Kuali importer stays off unless the team has BYU-Idaho's written permission.
-  Use `fixtures/catalog_seed.json` instead.
+- The course catalog comes from our own script and our own database, loaded
+  from `fixtures/catalog_seed.json`. We do not use Kuali or its API.
 - Honor `Crawl-delay: 10` on `www.byui.edu`. Cache every response; fetch each page
   once per term.
 - Rate My Professors: the backend sends no requests to ratemyprofessors.com and
@@ -139,7 +137,7 @@ working on requires (DATA-01 creates the skeleton).
 - `engine/`, `llm/` and `api/` must not import from `schools/byui` directly. They
   use the interfaces in `schools/base.py`. A test enforces this.
 - Everything specific to BYU-Idaho (tracks, blocks, religion rule, waitlist rule,
-  audit format, Course Search scraper, Kuali importer, directory pages) lives in
+  audit format, Course Search scraper, catalog loader, directory pages) lives in
   `schools/byui/`.
 - Catalog, schedule and professor tables carry a non-null `university_id`.
 - Dates, track rules, credit limits, weights, the relaxation order and minimum
@@ -222,7 +220,8 @@ run it, say so.
 - A prerequisite course marked "last offered" in an earlier year still counts if
   it is on the student's record.
 - Never merge two professors on name alone when the department differs.
-- Always look up the "current" Kuali catalog. Never hard-code a catalog id.
+- Store the catalog year with the catalog data, so the snapshot says which
+  catalog it holds.
 
 ## Importer rules
 
